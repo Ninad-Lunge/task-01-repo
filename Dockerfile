@@ -31,10 +31,10 @@
 # # Run the app
 # CMD ["python", "app.py"]
 
-FROM python:3.9-slim
+FROM python:3.9
 
 # Install known vulnerable version of a package
-RUN pip install Django==1.11.1  # Known vulnerabilities: CVE-2019-6975, etc.
+RUN pip install Django==1.11.1
 
 COPY . /app
 WORKDIR /app
