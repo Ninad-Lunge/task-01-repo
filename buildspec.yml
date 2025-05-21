@@ -3,7 +3,6 @@ version: 0.2
 env:
   variables:
     ECR_REPO_NAME: "task-app"
-    IMAGE_TAG: "latest"
     REGION: "us-east-1"
     REPORT_BUCKET: "ecr-scan-reports-908027380341"
 
@@ -15,26 +14,26 @@ phases:
       - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin 908027380341.dkr.ecr.us-east-1.amazonaws.com
       - REPO_URI=908027380341.dkr.ecr.us-east-1.amazonaws.com/task-app
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=${COMMIT_HASH:=latest}
+      - IMAGE_TAG=${COMMIT_HASH:-latest}
+      - echo Using IMAGE_TAG: $IMAGE_TAG
 
   build:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - docker build -t $REPO_URI:latest .
-      - docker tag $REPO_URI:latest $REPO_URI:$IMAGE_TAG
+      - docker build -t $REPO_URI:$IMAGE_TAG .
       - docker push $REPO_URI:$IMAGE_TAG
 
   post_build:
     commands:
-      - echo Waiting for scan results...
+      - echo Waiting for scan results on tag: $IMAGE_TAG...
       - |
         for i in {1..10}; do
           STATUS=$(aws ecr describe-image-scan-findings \
             --repository-name $ECR_REPO_NAME \
             --image-id imageTag=$IMAGE_TAG \
             --region $REGION \
-            --query 'imageScanStatus.status' --output text)
+            --query 'imageScanStatus.status' --output text 2>/dev/null)
           echo "Scan status: $STATUS"
           if [[ "$STATUS" == "COMPLETE" ]]; then break; fi
           sleep 10
@@ -48,7 +47,7 @@ phases:
       - echo Uploading scan report to S3...
       - |
         TIMESTAMP=$(date +%s)
-        aws s3 cp scan-findings.json s3://$REPORT_BUCKET/scan-findings-$TIMESTAMP.json
+        aws s3 cp scan-findings.json s3://$REPORT_BUCKET/scan-findings-$IMAGE_TAG-$TIMESTAMP.json
       - |
         HIGH_OR_CRITICAL=$(jq '[.imageScanFindings.findings[] | select(.severity=="HIGH" or .severity=="CRITICAL")] | length' scan-findings.json)
         echo "$HIGH_OR_CRITICAL high/critical vulnerabilities found."
