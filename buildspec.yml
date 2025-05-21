@@ -12,9 +12,9 @@ phases:
     commands:
       - echo Logging in to Amazon ECR...
       - aws --version
-      - $(aws ecr get-login --no-include-email --region $REGION)
       - REPO_URI=$(aws ecr describe-repositories --repository-names $ECR_REPO_NAME --region $REGION --query "repositories[0].repositoryUri" --output text)
-      - echo "Repo URI: $REPO_URI"
+      - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $REPO_URI
+
   build:
     commands:
       - echo Building Docker image...
