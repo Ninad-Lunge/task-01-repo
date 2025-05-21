@@ -31,7 +31,7 @@
 # # Run the app
 # CMD ["python", "app.py"]
 
-FROM python:3.9
+FROM public.ecr.aws/docker/library/python:3.9
 
 # Install known vulnerable version of a package
 RUN pip install Django==1.11.1
