@@ -19,10 +19,10 @@ phases:
 
   build:
     commands:
-      - echo Building Docker image...
-      - docker build -t $ECR_REPO_NAME:$IMAGE_TAG .
-      - docker tag $ECR_REPO_NAME:$IMAGE_TAG $REPO_URI:$IMAGE_TAG
-      - docker push $REPO_URI:$IMAGE_TAG
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t $REPO_URI:latest .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
 
   post_build:
     commands:
