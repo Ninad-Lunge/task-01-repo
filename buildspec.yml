@@ -13,14 +13,8 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws --version
       - $(aws ecr get-login --no-include-email --region $REGION)
-  pre_build:
-    commands:
-      - echo Logging in to Amazon ECR...
-      - aws --version
-      - $(aws ecr get-login --no-include-email --region $REGION)
-      - |
-        REPO_URI=908027380341.dkr.ecr.us-east-1.amazonaws.com/task-app
-        echo "Repo URI: $REPO_URI"
+      - REPO_URI=$(aws ecr describe-repositories --repository-names $ECR_REPO_NAME --region $REGION --query "repositories[0].repositoryUri" --output text)
+      - echo "Repo URI: $REPO_URI"
   build:
     commands:
       - echo Building Docker image...
