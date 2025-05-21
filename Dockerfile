@@ -14,7 +14,7 @@ RUN pip install --upgrade pip && \
     pip install --prefix=/install -r requirements.txt
 
 # Stage 2: Runtime
-FROM python:3.9-slim
+FROM public.ecr.aws/docker/library/python:3.9
 
 # Set working directory
 WORKDIR /app
