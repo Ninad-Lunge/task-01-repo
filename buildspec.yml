@@ -17,12 +17,13 @@ phases:
       - IMAGE_TAG=${COMMIT_HASH:-latest}
       - echo Using IMAGE_TAG: $IMAGE_TAG
 
-  build:
+    build:
     commands:
-      - echo Build started on `date`
       - echo Building the Docker image...
       - docker build -t $REPO_URI:$IMAGE_TAG .
       - docker push $REPO_URI:$IMAGE_TAG
+      - echo Starting image scan...
+      - aws ecr start-image-scan --repository-name $ECR_REPO_NAME --image-id imageTag=$IMAGE_TAG --region $REGION
 
   post_build:
     commands:
