@@ -30,21 +30,15 @@ phases:
       - aws ecr start-image-scan --repository-name task-app --image-id imageTag=$IMAGE_TAG --region $REGION
       - echo Waiting for scan results...
       - |
-        for i in {1..10}; do
-          STATUS=$(aws ecr describe-image-scan-findings \
-            --repository-name task-app \
-            --image-id imageTag=$IMAGE_TAG \
-            --region $REGION \
-            --query 'imageScanStatus.status' --output text)
+        echo "IMAGE_TAG=$IMAGE_TAG"
+        echo "REGION=$REGION"
+        for i in $(seq 1 10); do
+          STATUS=$(aws ecr describe-image-scan-findings --repository-name task-app --image-id imageTag=$IMAGE_TAG --region $REGION --query 'imageScanStatus.status' --output text)
           echo "Scan status: $STATUS"
-          if [[ "$STATUS" == "COMPLETE" ]]; then break; fi
+          if [ "$STATUS" = "COMPLETE" ]; then break; fi
           sleep 10
         done
-      - echo Getting scan findings...
-      - aws ecr describe-image-scan-findings \
-          --repository-name task-app \
-          --image-id imageTag=$IMAGE_TAG \
-          --region $REGION > scan-findings.json
+      - aws ecr describe-image-scan-findings --repository-name task-app --image-id imageTag=$IMAGE_TAG --region $REGION > scan-findings.json
       - cat scan-findings.json | jq
       - |
         HIGH_OR_CRITICAL=$(jq '[.imageScanFindings.findings[] | select(.severity=="HIGH" or .severity=="CRITICAL")] | length' scan-findings.json)
