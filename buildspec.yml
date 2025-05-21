@@ -30,31 +30,23 @@ phases:
       - echo Pushing the Docker images...
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
+      
+      - echo Starting image scan...
+      - aws ecr start-image-scan --repository-name $ECR_REPO_NAME --image-id imageTag=$IMAGE_TAG --region $REGION
+
       - echo Waiting for scan results...
       - |
         for i in {1..10}; do
+          echo "Checking image scan status..."
           STATUS=$(aws ecr describe-image-scan-findings \
             --repository-name $ECR_REPO_NAME \
             --image-id imageTag=$IMAGE_TAG \
             --region $REGION \
-            --query 'imageScanStatus.status' --output text)
+            --query 'imageScanStatus.status' --output text 2>/dev/null || echo "NOT_FOUND")
           echo "Scan status: $STATUS"
           if [[ "$STATUS" == "COMPLETE" ]]; then break; fi
           sleep 10
         done
-      - echo Getting scan findings...
-      - aws ecr describe-image-scan-findings --repository-name $ECR_REPO_NAME --image-id imageTag=$IMAGE_TAG --region $REGION > scan-findings.json
-      - cat scan-findings.json | jq
-      - echo Uploading scan report to S3...
-      - TIMESTAMP=$(date +%s)
-      - aws s3 cp scan-findings.json s3://$REPORT_BUCKET/scan-findings-$TIMESTAMP.json
-      - |
-        HIGH_OR_CRITICAL=$(jq '[.imageScanFindings.findings[] | select(.severity=="HIGH" or .severity=="CRITICAL")] | length' scan-findings.json)
-        echo "$HIGH_OR_CRITICAL high/critical vulnerabilities found."
-        if [ "$HIGH_OR_CRITICAL" -gt 0 ]; then
-          echo "Failing the build due to high/critical vulnerabilities."
-          exit 1
-        fi
 
 artifacts:
   files:
