@@ -1,0 +1,6 @@
+aws_region         = "us-east-1"
+ecr_repo_name      = "task-app"
+scan_report_bucket = "ecr-scan-reports-908027380341"
+github_repo_url    = "https://github.com/Ninad-Lunge/task-01-repo.git"
+github_owner       = "Ninad-Lunge"
+github_repo        = "task-01-repo"
