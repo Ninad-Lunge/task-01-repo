@@ -6,6 +6,7 @@ env:
     IMAGE_TAG: "latest"
     REGION: "us-east-1"
     REPORT_BUCKET: "ecr-scan-reports-908027380341"
+    REPO_URI: "908027380341.dkr.ecr.us-east-1.amazonaws.com/task-app"
 
 phases:
   pre_build:
@@ -13,7 +14,6 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws --version
       - $(aws ecr get-login --no-include-email --region $REGION)
-      - REPO_URI=$(aws ecr describe-repositories --repository-names $ECR_REPO_NAME --region $REGION --query "repositories[0].repositoryUri" --output text)
       - echo "Repo URI: $REPO_URI"
 
   build:
