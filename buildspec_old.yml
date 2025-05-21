@@ -15,14 +15,12 @@ phases:
       - $(aws ecr get-login --no-include-email --region $REGION)
       - REPO_URI=$(aws ecr describe-repositories --repository-names $ECR_REPO_NAME --region $REGION --query "repositories[0].repositoryUri" --output text)
       - echo "Repo URI: $REPO_URI"
-
   build:
     commands:
       - echo Building Docker image...
       - docker build -t $ECR_REPO_NAME:$IMAGE_TAG .
       - docker tag $ECR_REPO_NAME:$IMAGE_TAG $REPO_URI:$IMAGE_TAG
       - docker push $REPO_URI:$IMAGE_TAG
-
   post_build:
     commands:
       - echo Waiting for scan results...
@@ -44,19 +42,13 @@ phases:
           --region $REGION > scan-findings.json
       - cat scan-findings.json | jq
       - |
-        echo "Uploading scan report to S3..."
-        TIMESTAMP=$(date +%s)
-        aws s3 cp scan-findings.json s3://$REPORT_BUCKET/scan-findings-$TIMESTAMP.json
-
         HIGH_OR_CRITICAL=$(jq '[.imageScanFindings.findings[] | select(.severity=="HIGH" or .severity=="CRITICAL")] | length' scan-findings.json)
         echo "$HIGH_OR_CRITICAL high/critical vulnerabilities found."
-
         if [ "$HIGH_OR_CRITICAL" -gt 0 ]; then
           echo "Failing the build due to high/critical vulnerabilities."
+          aws s3 cp scan-findings.json s3://$REPORT_BUCKET/scan-findings-$(date +%s).json
           exit 1
         fi
-
 artifacts:
   files:
     - scan-findings.json
-
